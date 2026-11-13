@@ -1,0 +1,16 @@
+name: "kensakusystem"
+version: "1.0.0"
+
+profile: "kensakusystem"
+
+model-paths: ["models"]
+macro-paths: ["shared/macros"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  kensakusystem:
+    +database: kensakusystem
+    +materialized: table
