@@ -14,11 +14,11 @@
 
 ## 収録している議会
 
-| 議会 | 地方公共団体コード | 取得元 |
-| --- | --- | --- |
-| 目黒区議会 | 131105 | https://www.kensakusystem.jp/meguro/ |
-| 豊島区議会 | 131164 | https://www.kensakusystem.jp/toshima/ |
-| 葛飾区議会 | 131229 | https://www.kensakusystem.jp/katsushika/ |
+| 議会 | 地方公共団体コード |
+| --- | --- |
+| [目黒区議会](https://www.kensakusystem.jp/meguro/) | 131105 |
+| [豊島区議会](https://www.kensakusystem.jp/toshima/) | 131164 |
+| [葛飾区議会](https://www.kensakusystem.jp/katsushika/) | 131229 |
 
 ## 使い方
 
