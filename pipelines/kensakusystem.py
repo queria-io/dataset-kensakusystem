@@ -153,34 +153,32 @@ def download_assembly(a: Assembly, output: Path, fetched_at: str) -> int:
         path = output / a.lg_code / f"{year}.ndjson.gz"
         if year not in latest and path.exists():
             continue
-        rows = [
-            json.dumps({**row, "fetched_at": fetched_at}, ensure_ascii=False)
-            for s in by_year[year] for f in documents(a, s) for row in speeches(a, s, f)
-        ]
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with replacing(path) as partial, gzip.open(partial, "wt", encoding="utf-8") as out:
-            out.writelines(r + "\n" for r in rows)
+        rows = [row for s in by_year[year] for f in documents(a, s) for row in speeches(a, s, f)]
+        write(path, rows, fetched_at)
         logger.info("  %s %d年: %d 発言", a.name, year, len(rows))
         total += len(rows)
     return total
 
 
-def check_assembly(a: Assembly, output: Path, fetched_at: str) -> int:
-    """PR のビルド確認用。最新の会議の 1 日分だけを取る。"""
-    session = sessions(a)[0]
-    file_name = documents(a, session)[0]
-    rows = [json.dumps({**r, "fetched_at": fetched_at}, ensure_ascii=False) for r in speeches(a, session, file_name)]
-    path = output / a.lg_code / f"{western_year(session)}.ndjson.gz"
+def write(path: Path, rows: list[dict], fetched_at: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with replacing(path) as partial, gzip.open(partial, "wt", encoding="utf-8") as out:
-        out.writelines(r + "\n" for r in rows)
+        out.writelines(json.dumps({**row, "fetched_at": fetched_at}, ensure_ascii=False) + "\n" for row in rows)
+
+
+def check_assembly(a: Assembly, output: Path, fetched_at: str) -> int:
+    """PR のビルド確認用。ツリーの先頭にある年（最新の年）の、先頭の会議の 1 日分だけを取る。"""
+    session = sessions(a)[0]
+    file_name = documents(a, session)[0]
+    rows = list(speeches(a, session, file_name))
+    write(output / a.lg_code / f"{western_year(session)}.ndjson.gz", rows, fetched_at)
     logger.info("  %s %s %s: %d 発言", a.name, session.strip(), file_name, len(rows))
     return len(rows)
 
 
 def download_kensakusystem(output: Path = OUTPUT) -> int:
     fetched_at = datetime.now(UTC).isoformat()
-    # FDL_WORKING が無いのは PR のビルド確認。公開しないので各議会の最新の 1 日分だけを取る
+    # FDL_WORKING が無いのは PR のビルド確認。公開しないので各議会の最新の年の 1 日分だけを取る
     run = download_assembly if os.environ.get("FDL_WORKING") else check_assembly
     total = sum(run(a, output, fetched_at) for a in ASSEMBLIES)
     if total == 0:

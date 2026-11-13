@@ -1,6 +1,6 @@
 name: Build
 
-# 公開せずに各議会の最新の会議の 1 日分の取得と dbt build だけを回す。会議録検索システムの形が変わったときに Sync より先に気づくため
+# 公開せずに各議会の最新の年の会議の 1 日分の取得と dbt build だけを回す。会議録検索システムの形が変わったときに Sync より先に気づくため
 on:
   pull_request:
   workflow_dispatch:
