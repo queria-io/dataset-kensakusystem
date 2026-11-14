@@ -111,7 +111,8 @@ def speeches(a: Assembly, session: str, file_name: str) -> Iterator[dict]:
     listing = get(HOST + speakers_src)
     positions = re.findall(r'name="downloadPos" value="(\d+)"', listing)
     # ページ（P.1 など）へのリンクを除き、発言へのリンクだけを読む
-    names = [n.strip() for n in re.findall(r'r_TextFrame\.exe[^"]*" TARGET="TEXTW"><font class="TEXT5">([^<]+)<', listing)]
+    # 一覧の名前が空の発言もある（豊島区議会 H280215B15）。そのときは本文の先頭の全角空白までを名前にする
+    names = [n.strip() for n in re.findall(r'r_TextFrame\.exe[^"]*" TARGET="TEXTW"><font class="TEXT5">([^<]*)<', listing)]
     text = get(f"{base}/GetPerson.exe", [("Code", a.code), ("fileName", file_name)] + [("downloadPos", p) for p in positions])
     header, _, body = text.replace("\r\n", "\n").partition("\n\n")
     meeting = re.search(r"会議名：(.+)", header)
@@ -120,6 +121,9 @@ def speeches(a: Assembly, session: str, file_name: str) -> Iterator[dict]:
         raise SystemExit(f"{a.name} {file_name}: 発言の数が合わない（本文 {len(entries)}、位置 {len(positions)}、名前 {len(names)}）")
     held = parse_date(header)
     for order, (entry, position, name) in enumerate(zip(entries, positions, names)):
+        if not name:
+            entry = entry.lstrip("　 \n")
+            name = entry.split("　", 1)[0].strip()
         speech = entry.removeprefix(name).strip("　 \n")
         yield {
             "lg_code": a.lg_code,
