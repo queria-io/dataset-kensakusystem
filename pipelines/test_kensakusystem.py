@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from pipelines.kensakusystem import is_session, parse_date, western_year, years_to_fetch
+from pipelines.kensakusystem import is_session, parse_date, split_entries, western_year, years_to_fetch
 
 
 class EraTest(unittest.TestCase):
@@ -27,3 +27,12 @@ class TreeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_split_entries_keeps_an_agenda_without_mark():
+    assert split_entries("議事日程\n…\n○議長（甲）　開会します。\n○乙　質問します。\n") == [
+        "議事日程\n…\n",
+        "議長（甲）　開会します。\n",
+        "乙　質問します。\n",
+    ]
+    assert split_entries("\n○議事日程\n…\n○議長（甲）　開会します。\n") == ["議事日程\n…\n", "議長（甲）　開会します。\n"]

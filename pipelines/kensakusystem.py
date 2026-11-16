@@ -104,6 +104,16 @@ def documents(a: Assembly, session: str) -> list[str]:
     return list(dict.fromkeys(re.findall(r"ResultFrame\.exe\?Code=\w+&fileName=(\w+)&", html)))
 
 
+class Mismatch(ValueError):
+    """発言一覧と本文で発言の数が合わない会議録。"""
+
+
+def split_entries(body: str) -> list[str]:
+    """本文を「○」で始まる発言に分ける。先頭の議事日程に「○」が無い会議録もあり、そのときは先頭の塊を 1 件目にする。"""
+    head, *entries = re.split(r"^○", body, flags=re.M)
+    return [head, *entries] if head.strip() else entries
+
+
 def speeches(a: Assembly, session: str, file_name: str) -> Iterator[dict]:
     base = f"{HOST}/{a.path}/cgi-bin3"
     frame = get(f"{base}/ResultFrame.exe?Code={a.code}&fileName={file_name}&startPos=0")
@@ -116,9 +126,9 @@ def speeches(a: Assembly, session: str, file_name: str) -> Iterator[dict]:
     text = get(f"{base}/GetPerson.exe", [("Code", a.code), ("fileName", file_name)] + [("downloadPos", p) for p in positions])
     header, _, body = text.replace("\r\n", "\n").partition("\n\n")
     meeting = re.search(r"会議名：(.+)", header)
-    entries = re.split(r"^○", body, flags=re.M)[1:]
+    entries = split_entries(body)
     if not (len(entries) == len(positions) == len(names)):
-        raise SystemExit(f"{a.name} {file_name}: 発言の数が合わない（本文 {len(entries)}、位置 {len(positions)}、名前 {len(names)}）")
+        raise Mismatch(f"{a.name} {file_name}: 発言の数が合わない（本文 {len(entries)}、位置 {len(positions)}、名前 {len(names)}）")
     held = parse_date(header)
     for order, (entry, position, name) in enumerate(zip(entries, positions, names)):
         if not name:
@@ -145,6 +155,15 @@ def years_to_fetch(years: list[int], keep: int) -> list[int]:
     return ordered if keep == 0 else ordered[:keep]
 
 
+def speeches_or_skip(a: Assembly, session: str, file_name: str) -> list[dict]:
+    """発言の数が合わない会議録は警告を出して飛ばす。1 件のために全年分の取得を止めない。"""
+    try:
+        return list(speeches(a, session, file_name))
+    except Mismatch as e:
+        logger.warning("  飛ばした: %s", e)
+        return []
+
+
 def download_assembly(a: Assembly, output: Path, fetched_at: str) -> int:
     by_year: dict[int, list[str]] = {}
     for s in sessions(a):
@@ -157,7 +176,7 @@ def download_assembly(a: Assembly, output: Path, fetched_at: str) -> int:
         path = output / a.lg_code / f"{year}.ndjson.gz"
         if year not in latest and path.exists():
             continue
-        rows = [row for s in by_year[year] for f in documents(a, s) for row in speeches(a, s, f)]
+        rows = [row for s in by_year[year] for f in documents(a, s) for row in speeches_or_skip(a, s, f)]
         write(path, rows, fetched_at)
         logger.info("  %s %d年: %d 発言", a.name, year, len(rows))
         total += len(rows)
