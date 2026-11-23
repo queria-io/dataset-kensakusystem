@@ -31,13 +31,13 @@ licenses:
 sources:
   - id: meguro
     title: 目黒区議会 会議録検索システム
-    path: https://www.kensakusystem.jp/meguro/
+    url: https://www.kensakusystem.jp/meguro/
   - id: toshima
     title: 豊島区議会 会議録検索システム
-    path: https://www.kensakusystem.jp/toshima/
+    url: https://www.kensakusystem.jp/toshima/
   - id: katsushika
     title: 葛飾区議会 会議録検索システム
-    path: https://www.kensakusystem.jp/katsushika/
+    url: https://www.kensakusystem.jp/katsushika/
 contributors:
   - id: meguro-gikai
     title: 目黒区議会
