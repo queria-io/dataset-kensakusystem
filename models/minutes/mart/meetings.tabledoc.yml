@@ -19,6 +19,7 @@ columns:
   - name: session
     title: 会議
     description: 例 令和 8年 第1回定例会、予算特別委員会
+    dimension: categorical
   - name: meeting_name
     title: 会議名
     description: 会議録の見出し。例 令和 8年第1回定例会（第1日 2月17日）
